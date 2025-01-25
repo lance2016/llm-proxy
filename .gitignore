@@ -38,4 +38,4 @@ ENV/
 *.log
 
 # Local development
-.DS_Store 
+.DS_Store

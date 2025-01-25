@@ -1,45 +1,48 @@
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
-from app.schemas.base import (
-    ChatCompletionRequest, 
-    ChatCompletionResponse,
-    ChatCompletionStreamResponse
-)
-from app.utils.provider import get_provider_by_model
+import logging
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse, JSONResponse
 from typing import Union
-import json
+
+from app.core.exceptions import LLMAPIException
+from app.schemas.base import ChatCompletionRequest, ChatCompletionResponse
+from app.services.chat.service import ChatService
+from app.core.context import request_id_var
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
-async def stream_response(generator):
-    try:
-        async for chunk in generator:
-            if isinstance(chunk, ChatCompletionStreamResponse):
-                yield f"data: {chunk.model_dump_json()}\n\n"
-        yield "data: [DONE]\n\n"
-    except Exception as e:
-        yield f"data: {json.dumps({'error': str(e)})}\n\n"
-        raise HTTPException(status_code=500, detail=str(e))
 
-@router.post(
-    "/chat/completions",
-    response_model=Union[ChatCompletionResponse, ChatCompletionStreamResponse]
-)
-async def create_chat_completion(request: ChatCompletionRequest):
+@router.post("/chat/completions", response_model=ChatCompletionResponse)
+async def create_chat_completion(
+    request: ChatCompletionRequest,
+    fastapi_request: Request,
+) -> Union[ChatCompletionResponse, StreamingResponse]:
+    """Create a chat completion"""
     try:
-        provider = get_provider_by_model(request.model)
-        
+        trace_id = request_id_var.get()
+        logger.info(
+            f"Received request: {request.model_dump_json()}",
+            extra={"trace_id": trace_id}
+        )
+        response = await ChatService.chat_completion(request)
         if request.stream:
             return StreamingResponse(
-                stream_response(provider.chat_completion_stream(request)),
-                media_type="text/event-stream",
-                background=provider.close
+                response,
+                media_type="text/event-stream"
             )
-        else:
-            async with provider:
-                return await provider.chat_completion(request)
-                
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        return response
+    except LLMAPIException as e:
+        logger.error(
+            f"LLM API error: {e.detail}",
+            extra={"trace_id": trace_id}
+        )
+        raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) 
+        logger.exception(
+            "Unexpected error in chat completion",
+            extra={"trace_id": trace_id}
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error: {str(e)}"
+        ) 

@@ -2,16 +2,20 @@ from typing import List, Optional, Union, Dict, Any, Literal
 from pydantic import BaseModel, Field
 
 class Message(BaseModel):
+    """Chat message"""
     role: str
     content: str
 
 class ChatCompletionRequest(BaseModel):
+    """Chat completion request"""
     model: str
     messages: List[Message]
-    temperature: Optional[float] = 0.7
-    top_p: Optional[float] = 1.0
+    stream: bool = False
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
     max_tokens: Optional[int] = None
-    stream: Optional[bool] = False
+    presence_penalty: Optional[float] = None
+    frequency_penalty: Optional[float] = None
 
 class DeltaMessage(BaseModel):
     role: Optional[str] = None
@@ -33,16 +37,16 @@ class UsageInfo(BaseModel):
     total_tokens: int = 0
 
 class ChatCompletionResponse(BaseModel):
+    """Chat completion response"""
     id: str
-    object: str = "chat.completion"
     created: int
     model: str
     choices: List[ChatCompletionChoice]
     usage: UsageInfo
 
 class ChatCompletionStreamResponse(BaseModel):
+    """Chat completion stream response"""
     id: str
-    object: str = "chat.completion.chunk"
     created: int
     model: str
     choices: List[ChatCompletionStreamChoice]

@@ -1,222 +1,212 @@
 # LLM API Gateway
 
-[中文文档](README_CN.md)
-
-A unified async FastAPI gateway for various LLM providers with OpenAI-compatible interface. This project provides a standardized way to interact with different LLM providers through a single API interface.
+A FastAPI-based API gateway for multiple LLM providers (OpenAI, Anthropic, DeepSeek).
 
 ## Features
 
-- Async support for all endpoints
-- OpenAI-compatible interface
-- Streaming and non-streaming support
-- Easy to extend for new LLM providers
-- Clean and elegant design using Factory and Adapter patterns
-- HTTP-based communication with LLM providers
-- Standardized error handling
-- Type safety with Pydantic models
+- 🚀 Multiple LLM Provider Support
+  - OpenAI
+  - Anthropic
+  - DeepSeek
+  - Easily extensible for more providers
 
-## Project Structure
+- 🔄 Unified API Interface
+  - Compatible with OpenAI's chat completion API
+  - Streaming support
+  - Automatic provider selection based on model name
 
-```
-app/
-├── api/            # API routes and endpoints
-├── core/           # Core configurations
-├── models/         # Database models (if needed)
-├── schemas/        # Pydantic models for request/response
-├── services/       # LLM provider implementations
-│   ├── providers/  # Concrete provider implementations
-│   └── base.py     # Abstract base classes and factory
-└── utils/          # Utility functions
-```
+- 🔍 Advanced Logging System
+  - JSON structured logging
+  - Request tracing with trace_id
+  - Colored console output
+  - Log rotation
+  - Docker-friendly logging
 
-## Supported Providers
+- 🛡️ Built-in Security
+  - Rate limiting
+  - API key validation
+  - CORS protection
+  - Production-ready security checks
 
-Currently supported LLM providers:
-- OpenAI (GPT models)
-- Anthropic (Claude models)
-- Deepseek
+- 🎯 Production Ready
+  - Health checks
+  - Docker support
+  - Environment-based configuration
+  - Comprehensive error handling
 
-## Dependencies
+## Quick Start
 
-- Python 3.11+
-- FastAPI 0.104.0+
-- Pydantic 2.4.2+
-- Pydantic-settings 2.0.3+
-- HTTPX 0.25.0+
-- Other dependencies listed in `requirements.txt`
+### Using Docker (Recommended)
 
-## Setup
-
-### Option 1: Local Setup
-
-1. Create a virtual environment:
+1. Clone the repository:
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+git clone <repository-url>
+cd llm-api-gateway
 ```
 
-2. Install dependencies:
+2. Create and configure your `.env` file:
+```bash
+cp .env.example .env
+# Edit .env with your API keys and settings
+```
+
+3. Start the service:
+```bash
+docker-compose up -d
+```
+
+The API will be available at `http://localhost:8000`.
+
+### Manual Setup
+
+1. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Create a `.env` file with your API keys:
-```env
-# OpenAI API Configuration
-OPENAI_API_KEY=your_openai_key_here
-OPENAI_API_BASE=https://api.openai.com/v1
-
-# Anthropic API Configuration
-ANTHROPIC_API_KEY=your_anthropic_key_here
-ANTHROPIC_API_BASE=https://api.anthropic.com
-
-# Deepseek API Configuration
-DEEPSEEK_API_KEY=your_deepseek_key_here
-DEEPSEEK_API_BASE=https://api.deepseek.com/v1
-```
-
-### Option 2: Docker Setup
-
-1. Create a `.env` file with your API keys (same as above)
-
-2. Build and start the service using Docker Compose:
+2. Configure environment:
 ```bash
-docker-compose up -d --build
+cp .env.example .env
+# Edit .env with your API keys and settings
 ```
 
-3. Check the service status:
+3. Run the application:
 ```bash
-docker-compose ps
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-4. View logs:
-```bash
-docker-compose logs -f
-```
+## Configuration
 
-5. Stop the service:
-```bash
-docker-compose down
-```
+### Environment Variables
 
-6. Rebuild and restart (after code changes):
-```bash
-docker-compose up -d --build
-```
+- `OPENAI_API_KEY`: OpenAI API key
+- `ANTHROPIC_API_KEY`: Anthropic API key
+- `DEEPSEEK_API_KEY`: DeepSeek API key
+- `DEBUG`: Enable debug mode (default: false)
+- `ENV`: Environment (development/production)
+- `FORCE_COLOR`: Enable colored logging output (default: true)
 
-## Running the Server
+### Rate Limiting
 
-```bash
-uvicorn app.main:app --reload
-```
+- `RATE_LIMIT_ENABLED`: Enable rate limiting (default: true)
+- `RATE_LIMIT_REQUESTS`: Number of requests allowed (default: 100)
+- `RATE_LIMIT_PERIOD`: Time window in seconds (default: 60)
 
-## API Usage
+### Logging
 
-### Basic Chat Completion
+- `LOG_LEVEL`: Logging level (default: INFO)
+- `LOG_DIR`: Log directory (default: logs)
+- `LOG_MAX_BYTES`: Maximum log file size (default: 10MB)
+- `LOG_BACKUP_COUNT`: Number of backup files (default: 5)
 
-```bash
-curl -X POST "http://localhost:8000/api/v1/chat/completions" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "model": "gpt-3.5-turbo",
-       "messages": [
-         {"role": "user", "content": "Hello!"}
-       ]
-     }'
-```
+## API Documentation
 
-### Streaming Chat Completion
+Once running, visit:
+- OpenAPI documentation: `http://localhost:8000/docs`
+- ReDoc documentation: `http://localhost:8000/redoc`
 
-```bash
-curl -X POST "http://localhost:8000/api/v1/chat/completions" \
-     -H "Content-Type: application/json" \
-     -N \
-     -d '{
-       "model": "deepseek-chat",
-       "messages": [
-         {"role": "user", "content": "Hello!"}
-       ],
-       "stream": true
-     }'
-```
+### Key Endpoints
 
-### Model Prefix Mapping
-
-The provider is automatically selected based on the model prefix:
-- `gpt-*`: OpenAI provider
-- `anthropic-*`: Anthropic provider
-- `deepseek-*`: Deepseek provider
-
-## Adding New Providers
-
-1. Create a new provider class in `app/services/providers/`:
-```python
-@LLMProviderFactory.register("your_provider")
-class YourProvider(LLMProvider):
-    async def chat_completion(self, request: ChatCompletionRequest) -> ChatCompletionResponse:
-        # Implement non-streaming chat completion
-        pass
-    
-    async def chat_completion_stream(
-        self, 
-        request: ChatCompletionRequest
-    ) -> AsyncGenerator[ChatCompletionStreamResponse, None]:
-        # Implement streaming chat completion
-        pass
-    
-    def prepare_headers(self) -> Dict[str, str]:
-        # Prepare request headers
-        pass
-    
-    def prepare_payload(self, request: ChatCompletionRequest) -> Dict[str, Any]:
-        # Convert request to provider format
-        pass
-    
-    def process_response(self, response: Dict[str, Any]) -> ChatCompletionResponse:
-        # Convert provider response to standard format
-        pass
-    
-    async def process_stream_response(
-        self, 
-        response: httpx.Response
-    ) -> AsyncGenerator[ChatCompletionStreamResponse, None]:
-        # Process streaming response
-        pass
-```
-
-2. Add provider configuration in `app/core/config.py`:
-```python
-# Your Provider Endpoints
-YOUR_PROVIDER_API_KEY: str = ""
-YOUR_PROVIDER_API_BASE: str = "https://api.your-provider.com/v1"
-
-# Add to PROVIDER_CONFIGS
-PROVIDER_CONFIGS: Dict[str, Dict[str, str]] = {
-    "your-prefix": {
-        "provider": "your_provider",
-        "api_key": "YOUR_PROVIDER_API_KEY",
-        "api_base": "YOUR_PROVIDER_API_BASE"
-    }
-}
-```
-
-3. Import your provider in `app/services/providers/__init__.py`
-
-## Error Handling
-
-The API provides standardized error responses:
-- 400: Bad Request (invalid input)
-- 401: Unauthorized (invalid API key)
-- 404: Not Found (invalid endpoint)
-- 500: Internal Server Error
+- `POST /api/v1/chat/completions`: Chat completion endpoint
+  - Compatible with OpenAI's chat completion API
+  - Supports streaming responses
+  - Automatic provider selection based on model prefix
 
 ## Development
 
-- Use `black` for code formatting
-- Use `isort` for import sorting
-- Use `mypy` for type checking
-- Follow PEP 8 style guidelines
+### Project Structure
+
+```
+app/
+├── api/
+│   └── v1/
+│       └── endpoints.py
+├── core/
+│   ├── config/
+│   │   └── settings.py
+│   ├── middleware/
+│   │   ├── rate_limit.py
+│   │   └── request_logging.py
+│   ├── providers/
+│   │   └── http_client.py
+│   ├── context.py
+│   ├── exceptions.py
+│   ├── handlers.py
+│   └── logging_config.py
+├── services/
+│   └── chat/
+│       └── service.py
+└── main.py
+```
+
+### Adding a New Provider
+
+1. Create a new provider class in `app/core/providers/`
+2. Implement the required interface methods
+3. Add provider configuration in `settings.py`
+4. Register the provider in `PROVIDER_CONFIGS`
+
+## Docker Support
+
+### Build Image
+```bash
+docker build -t llm-api-gateway .
+```
+
+### Run Container
+```bash
+docker run -d \
+  -p 8000:8000 \
+  -v ./logs:/app/logs \
+  --env-file .env \
+  llm-api-gateway
+```
+
+### Docker Compose
+```bash
+docker-compose up -d
+```
+
+## Logging
+
+The application uses a sophisticated logging system with:
+
+- JSON structured logging for file output
+- Colored console output (configurable via `FORCE_COLOR`)
+- Request tracing with `trace_id`
+- Automatic log rotation
+- Docker-friendly logging configuration
+
+### Log Formats
+
+- Console: Colored, human-readable format
+- File: JSON format with additional metadata
+
+Example console output:
+```
+2024-01-25 10:30:45 [INFO] app.main: Server started
+2024-01-25 10:30:46 [INFO] app.api: Request received [trace_id: abc-123]
+```
+
+Example JSON log:
+```json
+{
+  "trace_id": "abc-123",
+  "timestamp": "2024-01-25T10:30:45",
+  "level": "INFO",
+  "logger": "app.main",
+  "message": "Server started"
+}
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
 ## License
 
-MIT
+[MIT License](LICENSE)

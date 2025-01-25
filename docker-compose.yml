@@ -7,13 +7,26 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./.env:/app/.env:ro
+      - ./app:/app/app:ro
+      - ./logs:/app/logs
+    env_file:
+      - .env
     environment:
       - TZ=Asia/Shanghai
+      - FORCE_COLOR=1
+      - TERM=xterm-256color
+      - PYTHONUNBUFFERED=1
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
-      interval: 30s
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/" ]
+      interval: 60s
       timeout: 10s
       retries: 3
-      start_period: 10s 
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    tty: true # Enable TTY
+    stdin_open: true # Keep stdin open
