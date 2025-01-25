@@ -36,7 +36,18 @@ Currently supported LLM providers:
 - Anthropic (Claude models)
 - Deepseek
 
+## Dependencies
+
+- Python 3.11+
+- FastAPI 0.104.0+
+- Pydantic 2.4.2+
+- Pydantic-settings 2.0.3+
+- HTTPX 0.25.0+
+- Other dependencies listed in `requirements.txt`
+
 ## Setup
+
+### Option 1: Local Setup
 
 1. Create a virtual environment:
 ```bash
@@ -62,6 +73,35 @@ ANTHROPIC_API_BASE=https://api.anthropic.com
 # Deepseek API Configuration
 DEEPSEEK_API_KEY=your_deepseek_key_here
 DEEPSEEK_API_BASE=https://api.deepseek.com/v1
+```
+
+### Option 2: Docker Setup
+
+1. Create a `.env` file with your API keys (same as above)
+
+2. Build and start the service using Docker Compose:
+```bash
+docker-compose up -d --build
+```
+
+3. Check the service status:
+```bash
+docker-compose ps
+```
+
+4. View logs:
+```bash
+docker-compose logs -f
+```
+
+5. Stop the service:
+```bash
+docker-compose down
+```
+
+6. Rebuild and restart (after code changes):
+```bash
+docker-compose up -d --build
 ```
 
 ## Running the Server

@@ -34,7 +34,18 @@ app/
 - Anthropic（Claude 模型）
 - Deepseek
 
+## 依赖要求
+
+- Python 3.11+
+- FastAPI 0.104.0+
+- Pydantic 2.4.2+
+- Pydantic-settings 2.0.3+
+- HTTPX 0.25.0+
+- 其他依赖见 `requirements.txt`
+
 ## 安装设置
+
+### 方式一：本地安装
 
 1. 创建虚拟环境：
 ```bash
@@ -60,6 +71,35 @@ ANTHROPIC_API_BASE=https://api.anthropic.com
 # Deepseek API 配置
 DEEPSEEK_API_KEY=你的_deepseek_密钥
 DEEPSEEK_API_BASE=https://api.deepseek.com/v1
+```
+
+### 方式二：Docker 部署
+
+1. 创建 `.env` 文件并配置 API 密钥（同上）
+
+2. 使用 Docker Compose 构建并启动服务：
+```bash
+docker-compose up -d --build
+```
+
+3. 检查服务状态：
+```bash
+docker-compose ps
+```
+
+4. 查看日志：
+```bash
+docker-compose logs -f
+```
+
+5. 停止服务：
+```bash
+docker-compose down
+```
+
+6. 重新构建并重启（代码更新后）：
+```bash
+docker-compose up -d --build
 ```
 
 ## 运行服务器
